@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>ToneForge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0b0d;--p:#16161a;--p2:#1d1d23;--l:#2a2a31;--t:#eeebe6;--m:#8d8a94;--a:#ff8a1f}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--t);font-family:Inter,system-ui,sans-serif;overscroll-behavior:none}
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+button{font-family:inherit;color:inherit;cursor:pointer}
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh;padding-top:env(safe-area-inset-top);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+header{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--l);background:#0f0f12}
+.logo{font:700 19px Oswald;letter-spacing:2px}.logo span{color:var(--a)}
+.tname{flex:1;min-width:0;font-size:12px;color:var(--m);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#scope{width:84px;height:28px;border-radius:6px;background:#141417}
+main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.tab{display:none;padding:14px 14px 24px}.tab.on{display:block}
+nav{display:flex;border-top:1px solid var(--l);background:#0f0f12;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:0;color:var(--m);padding:9px 0 7px;font:600 11px Inter;display:flex;flex-direction:column;align-items:center;gap:3px}
+nav button.on{color:var(--a)}nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+h2{font:700 20px Oswald;letter-spacing:1px;margin:0;text-transform:uppercase}
+h3{font:600 13px Oswald;letter-spacing:1.5px;text-transform:uppercase;color:var(--m);margin:18px 0 8px}
+.row{display:flex;gap:8px;align-items:center}
+.seg{display:flex;background:var(--p2);border-radius:11px;padding:3px;flex:1}
+.seg button{flex:1;border:0;background:none;padding:8px 4px;border-radius:8px;font:600 13px Inter;color:var(--m)}
+.seg button.on{background:#30303a;color:#fff}
+.btn{border:1px solid var(--l);background:var(--p2);border-radius:11px;padding:10px 12px;font:600 13px Inter}
+.btn.pri{background:var(--a);border-color:var(--a);color:#160b00}
+.btn.on{border-color:var(--a);color:var(--a)}
+.btn.sm{padding:7px 10px;font-size:12px;border-radius:9px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:12px 0 10px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;padding:7px 11px;border-radius:20px;font:600 12px Inter;background:var(--p2);border:1px solid var(--pc);display:flex;gap:6px;align-items:center}
+.chip i{width:8px;height:8px;border-radius:50%;background:#ff3b3b;box-shadow:0 0 6px #f33}
+.chip.off{opacity:.4}.chip.off i{background:#511;box-shadow:none}
+.chip.amp{border-color:#d8c48c;color:#e9dcb1}
+.arrow{color:var(--m);flex:none;align-self:center;font-size:11px}
+/* chord pads */
+.pads{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.pad{height:50px;border-radius:12px;background:var(--p2);border:1px solid var(--l);font:700 18px Oswald;color:#ddd;touch-action:manipulation}
+.pad.on{background:var(--a);color:#160b00;border-color:var(--a)}
+.pad:active{transform:scale(.96)}
+/* strum */
+.strum{position:relative;margin-top:10px;height:236px;border-radius:16px;background:linear-gradient(90deg,#24160c,#3b2615 35%,#2f1e10 70%,#24160c);display:flex;flex-direction:column;touch-action:none;overflow:hidden;border:1px solid #47301d;box-shadow:inset 0 0 30px #0009}
+.strum .hole{position:absolute;right:-60px;top:50%;width:170px;height:170px;margin-top:-85px;border-radius:50%;background:radial-gradient(#0a0604 58%,#5a3b22 60%,#2a1a0e 64%,transparent 66%);opacity:.8;pointer-events:none}
+.strum .cname{position:absolute;right:12px;top:4px;z-index:2;font:700 13px Oswald;color:#e8c99a;opacity:.6;pointer-events:none;letter-spacing:1px}
+.str{flex:1;position:relative;display:flex;align-items:center;pointer-events:none}
+.str i{position:absolute;left:30px;right:0;background:linear-gradient(#fff3d6,#a8915f);box-shadow:0 2px 3px #0009;border-radius:2px}
+.str b{width:30px;text-align:center;font:700 12px Oswald;color:#e0c194;opacity:.75;position:relative;z-index:1}
+.str.mute i{opacity:.35}
+.str.vib i{animation:vib .4s linear;background:linear-gradient(#fff,#ffc46b)}
+@keyframes vib{0%{transform:translateY(0)}12%{transform:translateY(-2.5px)}25%{transform:translateY(2.5px)}37%{transform:translateY(-2px)}50%{transform:translateY(2px)}62%{transform:translateY(-1px)}75%{transform:translateY(1px)}100%{transform:translateY(0)}}
+.strumbtns{display:flex;gap:8px;margin-top:10px}.strumbtns .btn{flex:1;padding:14px;font-size:15px}
+/* fretboard */
+.fb{overflow-x:auto;border-radius:14px;background:#2a1b10;border:1px solid #47301d;touch-action:pan-x;box-shadow:inset 0 0 24px #000a}
+.fbg{display:grid;position:relative;width:max-content}
+.fc{height:46px;position:relative;border-right:3px solid #b8b1a2;touch-action:pan-x}
+.fc.open{border-right:9px solid #ece3cf;background:#1c120a}
+.fc::before{content:'';position:absolute;left:0;right:-3px;top:50%;height:var(--th);margin-top:calc(var(--th)/-2);background:linear-gradient(#fff3d6,#a8915f);box-shadow:0 2px 2px #0008;pointer-events:none}
+.fc.hit::after{content:'';position:absolute;left:50%;top:50%;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:var(--a);box-shadow:0 0 14px var(--a);animation:pop .35s ease-out forwards;pointer-events:none}
+@keyframes pop{from{transform:scale(1);opacity:1}to{transform:scale(1.4);opacity:0}}
+.fc .nn{position:absolute;bottom:2px;right:4px;font:600 9px Inter;color:#e0c194;opacity:.45;pointer-events:none}
+.fmk{height:22px;display:flex;align-items:center;justify-content:center;font:600 10px Inter;color:#a88b66}
+.fmk.dot::before{content:'';width:9px;height:9px;border-radius:50%;background:#e8dcc4;opacity:.8}
+.fmk.dbl::before{box-shadow:14px 0 0 #e8dcc4;margin-right:14px}
+.hint{font-size:12px;color:var(--m);margin:8px 2px 0;line-height:1.45}
+.ctlrow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.ctlrow .btn{flex:1}
+.card{background:var(--p);border:1px solid var(--l);border-radius:14px;padding:12px;margin-top:12px}
+.card p{margin:6px 0 0;font-size:13px;color:var(--m);line-height:1.5}
+.warn{color:#ffb86b!important}
+/* pedals */
+.sig{display:flex;align-items:center;gap:8px;font:600 11px Oswald;letter-spacing:1.5px;color:var(--m);text-transform:uppercase;margin:6px 0 10px}
+.sig::after{content:'';flex:1;height:1px;background:var(--l)}
+.cable{width:4px;height:14px;margin:-6px auto 6px;background:#333;border-radius:2px}
+.pedal{position:relative;border-radius:18px;padding:12px 12px 14px;margin-bottom:12px;color:var(--ink);
+ background:linear-gradient(165deg,color-mix(in srgb,var(--pc) 80%,#fff 20%),var(--pc) 40%,color-mix(in srgb,var(--pc) 72%,#000 28%));
+ box-shadow:0 8px 20px #000a,inset 0 1px 0 #fff5,inset 0 -2px 0 #0004;transition:filter .2s}
+.pedal.off{filter:saturate(.3) brightness(.55)}
+.ptop{display:flex;align-items:center;gap:8px}
+.led{width:11px;height:11px;border-radius:50%;background:#3a0b0b;box-shadow:inset 0 1px 2px #000;flex:none}
+.pedal:not(.off) .led{background:#ff3434;box-shadow:0 0 10px #ff3434,0 0 2px #fff inset}
+.pname{border:0;background:none;padding:0;font:700 18px Oswald;letter-spacing:1px;text-transform:uppercase;text-align:left;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+.pname small{font:600 10px Inter;letter-spacing:0;opacity:.65;text-transform:none;margin-left:6px}
+.pbtns{display:flex;gap:4px}
+.pbtns button{width:30px;height:30px;border-radius:9px;border:0;background:#0003;color:var(--ink);font-size:12px}
+.knobs{display:flex;flex-wrap:wrap;gap:10px 12px;justify-content:center;margin:12px 0 6px}
+.knob{width:62px;display:flex;flex-direction:column;align-items:center;touch-action:none;cursor:ns-resize}
+.dial{width:50px;height:50px;border-radius:50%;background:radial-gradient(circle at 35% 28%,#5c5c5c,#141414 68%);box-shadow:0 4px 7px #000a,0 0 0 3px #0002;position:relative}
+.ptr{position:absolute;inset:0}.ptr::after{content:'';position:absolute;left:50%;top:5px;width:3px;height:14px;margin-left:-1.5px;background:#fff;border-radius:2px}
+.knob.act .dial{box-shadow:0 0 0 3px var(--a),0 4px 7px #000a}
+.kv{font:700 11px Inter;margin-top:5px}
+.kl{font:600 10px Oswald;letter-spacing:1px;text-transform:uppercase;opacity:.8;text-align:center}
+.foot{display:block;margin:6px auto 0;width:60px;height:60px;border-radius:50%;border:0;background:radial-gradient(circle at 35% 30%,#f7f7f7,#a4a4a4 55%,#5a5a5a);box-shadow:0 5px 0 #2d2d2d,0 8px 12px #000a}
+.foot:active{transform:translateY(4px);box-shadow:0 1px 0 #2d2d2d,0 3px 6px #000a}
+.empty{border:2px dashed var(--l);border-radius:16px;padding:26px;text-align:center;color:var(--m);font-size:14px}
+/* amp */
+.ampface{border-radius:18px;padding:12px;background:repeating-linear-gradient(45deg,#1a1a1a 0 3px,#151515 3px 6px);border:3px solid #2e2e2e;box-shadow:0 10px 24px #000b}
+.amphead{display:flex;align-items:center;justify-content:space-between;padding:2px 4px 10px}
+.amphead .brand{font:italic 700 22px Oswald;letter-spacing:1px;color:#e9dcb1}
+.amphead .badge{font:600 10px Inter;padding:4px 8px;border-radius:20px;background:#0006;color:#ccc;text-transform:uppercase;letter-spacing:1px}
+.amppanel{border-radius:10px;padding:10px 4px;background:linear-gradient(#e2cf96,#a99459);color:#1d1606;--ink:#1d1606;box-shadow:inset 0 2px 0 #fff6,inset 0 -2px 0 #0003}
+.ampface.bass .amppanel{background:linear-gradient(#c9d2db,#7d8a97);color:#0b1520}
+.ampface.direct .amppanel{background:linear-gradient(#3a3a42,#24242a);color:#ddd}
+.amppanel .dial{background:radial-gradient(circle at 35% 28%,#444,#080808 65%)}
+.grille{height:90px;margin-top:12px;border-radius:10px;background:radial-gradient(#0000 0 1px,#0007 1.5px) 0 0/6px 6px,linear-gradient(#3c3226,#2a231a);border:2px solid #0006}
+.ampface.bass .grille{background:radial-gradient(#0000 0 1px,#000a 1.5px) 0 0/5px 5px,linear-gradient(#262a2e,#16191c)}
+.ampface.direct .grille{display:none}
+.amps{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ampbtn{text-align:left;border:1px solid var(--l);background:var(--p);border-radius:12px;padding:10px}
+.ampbtn b{display:block;font:600 14px Oswald;letter-spacing:.5px}.ampbtn span{font-size:11px;color:var(--m);line-height:1.35;display:block;margin-top:2px}
+.ampbtn.on{border-color:var(--a);background:#24180d}
+.globals{display:flex;justify-content:center;gap:24px;--ink:#eee}
+/* tones */
+.tlist{display:flex;flex-direction:column;gap:8px}
+.titem{display:flex;align-items:center;gap:10px;background:var(--p);border:1px solid var(--l);border-radius:12px;padding:10px 12px}
+.titem .tt{flex:1;min-width:0}.titem b{display:block;font-size:14px}.titem span{font-size:11px;color:var(--m);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag{font:700 9px Inter;letter-spacing:1px;text-transform:uppercase;padding:3px 6px;border-radius:6px;background:#2a2a32;color:#bbb;flex:none}
+.tag.bass{background:#16324a;color:#9cd3ff}
+input[type=text],textarea{width:100%;background:#0f0f12;border:1px solid var(--l);border-radius:10px;color:var(--t);padding:10px 12px;font:14px Inter;-webkit-user-select:text;user-select:text}
+textarea{height:70px;resize:none;font-size:11px}
+.credit{text-align:center;color:var(--m);font-size:11px;margin-top:22px;letter-spacing:1px}
+/* sheets */
+.sheet{position:fixed;inset:0;background:#000b;display:none;align-items:flex-end;z-index:50}
+.sheet.on{display:flex}
+.box{background:#141418;width:100%;max-height:86vh;max-height:86dvh;overflow:auto;border-radius:20px 20px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom));border-top:1px solid var(--l)}
+.boxhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.addgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.additem{display:flex;gap:10px;align-items:flex-start;text-align:left;border:1px solid var(--l);background:var(--p);border-radius:12px;padding:10px}
+.additem .sw{width:22px;height:30px;border-radius:6px;background:var(--pc);flex:none;box-shadow:inset 0 -3px 0 #0004}
+.additem b{font:600 13px Oswald;letter-spacing:.5px;display:block}.additem span{font-size:10.5px;color:var(--m);line-height:1.3;display:block}
+.additem.big{grid-column:1/-1;border-color:#e11d48;background:#200a10}
+.swatches{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.swatches button{width:38px;height:38px;border-radius:10px;border:2px solid transparent}
+.swatches button.on{border-color:#fff;box-shadow:0 0 0 2px var(--a)}
+#toast{position:fixed;left:50%;bottom:calc(78px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:#26262e;border:1px solid #3a3a44;color:#fff;padding:10px 14px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:60;max-width:92vw;display:flex;gap:10px;align-items:center}
+#toast.on{opacity:1;transform:translateX(-50%);pointer-events:auto}
+#toast button{border:0;background:none;color:var(--a);font-weight:700}
+#start{position:fixed;inset:0;z-index:100;background:radial-gradient(circle at 50% 35%,#2a1606,#0b0b0d 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center}
+#start .logo{font-size:42px}
+#start p{color:var(--m);font-size:14px;line-height:1.5;max-width:320px}
+#start .btn{font-size:17px;padding:16px 40px;border-radius:16px;margin-top:14px}
+.jack{width:70px;height:70px;border-radius:50%;margin:0 auto 18px;background:radial-gradient(#000 30%,#888 33%,#ddd 45%,#555 60%);box-shadow:0 0 40px #ff8a1f55}
+</style>
+</head>
+<body>
+<div class="app">
+ <header>
+  <div class="logo">TONE<span>FORGE</span></div>
+  <div class="tname" id="tname"></div>
+  <canvas id="scope" width="168" height="56"></canvas>
+ </header>
+ <main id="main">
+  <section class="tab on" id="t-play">
+   <div class="row">
+    <div class="seg" id="instSeg"><button data-v="guitar">🎸 Guitar</button><button data-v="bass">Bass</button></div>
+    <div class="seg" id="modeSeg"><button data-v="chords">Chords</button><button data-v="frets">Frets</button></div>
+   </div>
+   <div class="chips" id="chips"></div>
+   <div id="instArea"></div>
+   <div class="ctlrow">
+    <button class="btn" id="pmBtn">✋ Palm mute</button>
+    <button class="btn" id="loopBtn">🔁 Loop riff</button>
+   </div>
+   <div class="card">
+    <div class="row" style="justify-content:space-between"><b style="font:600 14px Oswald;letter-spacing:1px">REAL INSTRUMENT INPUT</b></div>
+    <div class="ctlrow" style="margin-top:8px">
+     <button class="btn sm" id="liveBtn">🎤 Live input</button>
+     <button class="btn sm" id="fileBtn">📁 Load audio clip</button>
+     <input type="file" id="fileIn" accept="audio/*" hidden>
+    </div>
+    <p id="inMsg">Plug a guitar or bass in through an audio interface, or load a dry recording to re-amp it through your board.</p>
+   </div>
+  </section>
+
+  <section class="tab" id="t-board">
+   <div class="row" style="justify-content:space-between;margin-bottom:12px"><h2>Pedalboard</h2><button class="btn pri" id="addBtn">＋ Add pedal</button></div>
+   <div class="sig">Input</div>
+   <div id="board"></div>
+   <div class="sig">To amp →</div>
+   <p class="hint">Drag knobs up/down. Stomp the footswitch to bypass. Tap a pedal's name to rename it or change its color. Signal runs top to bottom.</p>
+  </section>
+
+  <section class="tab" id="t-amp"><div id="ampArea"></div></section>
+
+  <section class="tab" id="t-tones"><div id="tonesArea"></div></section>
+ </main>
+ <nav id="nav">
+  <button data-t="play" class="on"><svg viewBox="0 0 24 24"><path d="M14 4l6 6M17 7l-7.5 7.5"/><path d="M9.5 14.5a3.5 3.5 0 1 0-3 5.5c2 0 3-1 3.5-2.5"/><circle cx="8" cy="16" r="1"/></svg>Play</button>
+  <button data-t="board"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="3"/><circle cx="12" cy="16" r="2.5"/><circle cx="9" cy="8" r="1.5"/><circle cx="15" cy="8" r="1.5"/></svg>Pedals</button>
+  <button data-t="amp"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><circle cx="12" cy="14.5" r="3"/></svg>Amp</button>
+  <button data-t="tones"><svg viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>Tones</button>
+ </nav>
+</div>
+
+<div class="sheet" id="addSheet"><div class="box">
+ <div class="boxhead"><h2>Add a pedal</h2><button class="btn sm" data-close>Close</button></div>
+ <div id="addList"></div>
+</div></div>
+
+<div class="sheet" id="editSheet"><div class="box">
+ <div class="boxhead"><h2>Customize pedal</h2><button class="btn sm pri" data-close>Done</button></div>
+ <h3>Name</h3><input type="text" id="edName" maxlength="22">
+ <h3>Enclosure color</h3><div class="swatches" id="edSw"></div>
+ <h3>Library</h3>
+ <button class="btn" id="edSave" style="width:100%">★ Save to My Pedals</button>
+ <p class="hint">Saved pedals keep their name, color and knob settings, so you can drop them into any tone.</p>
+</div></div>
+
+<div id="toast"></div>
+
+<div id="start">
+ <div class="jack"></div>
+ <div class="logo">TONE<span>FORGE</span></div>
+ <p>Build pedals, dial in guitar &amp; bass amps, and play a virtual guitar — no instrument needed.</p>
+ <button class="btn pri" id="startBtn">Plug in</button>
+ <p style="font-size:12px;margin-top:18px">On iPhone, turn off Silent Mode to hear sound. Headphones recommended.</p>
+</div>
+
+<script>
+'use strict';
+/* ================= helpers ================= */
+const $=s=>document.querySelector(s);
+const uid=()=>Math.random().toString(36).slice(2,9);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ink=h=>{const n=parseInt(h.slice(1),16),r=n>>16,g=n>>8&255,b=n&255;return (r*299+g*587+b*114)/1000>150?'#141414':'#ffffff'};
+let ctx,srcBus,inGain,amp,limiter,masterG,analyser,scopeBuf;
+const G=(v=1)=>{const g=ctx.createGain();g.gain.value=v;return g};
+const F=(type,f,Q=0.707,gain=0)=>{const b=ctx.createBiquadFilter();b.type=type;b.frequency.value=f;b.Q.value=Q;b.gain.value=gain;return b};
+const LFO=(r,type='sine')=>{const o=ctx.createOscillator();o.type=type;o.frequency.value=r;o.start();return o};
+const SH=()=>{const s=ctx.createWaveShaper();s.oversample='4x';return s};
+const link=(...n)=>{for(let i=0;i<n.length-1;i++)n[i].connect(n[i+1])};
+const sm=(p,v)=>p.setTargetAtTime(v,ctx.currentTime,0.02);
+const kill=(...n)=>n.forEach(x=>{try{x.stop&&x.stop()}catch(e){}try{x.disconnect()}catch(e){}});
+function curve(fn,n=2048){const c=new Float32Array(n);for(let i=0;i<n;i++){const x=i*2/(n-1)-1;c[i]=fn(x)}return c}
+const asym=(k,x)=>x>=0?(1-Math.exp(-k*x))/(1-Math.exp(-k)):-0.72*(1-Math.exp(k*0.6*x))/(1-Math.exp(-k*0.6));
+const soft=k=>x=>Math.tanh(k*x)/Math.tanh(k);
+
+/* ================= pedal circuits ================= */
+function bComp(){const i=G(),c=ctx.createDynamicsCompressor(),o=G();c.knee.value=8;c.release.value=0.22;link(i,c,o);
+ return{in:i,out:o,set(p){sm(c.threshold,-8-p.sustain*4.2);sm(c.ratio,3+p.sustain*1.6);c.attack.value=0.001+p.attack/10*0.08;sm(o.gain,(p.level/5)*(1+p.sustain*0.2))},destroy(){kill(i,c,o)}}}
+function bBoost(){const i=G(),hs=F('highshelf',2800),o=G();link(i,hs,o);
+ return{in:i,out:o,set(p){sm(o.gain,Math.pow(10,(p.boost*1.8)/20));sm(hs.gain,(p.bright-3)*1.5)},destroy(){kill(i,hs,o)}}}
+function bDrive(kind){const i=G(),hp=F('highpass',kind==='od'?180:kind==='dist'?90:40),sh=SH(),scoop=F('peaking',750,0.9,kind==='dist'?-4:0),tone=F('lowpass',4000,0.8),dc=F('highpass',25),o=G();
+ link(i,hp,sh,scoop,tone,dc,o);
+ return{in:i,out:o,set(p){const d=p.drive/10;
+  if(kind==='od'){sh.curve=curve(soft(1+d*d*14));sm(tone.frequency,900+p.tone*550);sm(o.gain,p.level/10*0.95)}
+  else if(kind==='dist'){const k=2+d*d*70;sh.curve=curve(x=>Math.atan(k*x)/Math.atan(k));sm(tone.frequency,1300+p.tone*650);sm(o.gain,p.level/10*0.7)}
+  else{const k=4+d*d*160;sh.curve=curve(x=>asym(k,x));sm(tone.frequency,500+p.tone*560);sm(o.gain,p.level/10*0.62)}},destroy(){kill(i,hp,sh,scoop,tone,dc,o)}}}
+const CLIPS=[k=>soft(k),k=>x=>clamp(k*x,-1,1),k=>x=>asym(k,x),k=>x=>Math.sin(x*(1+k*0.12)*1.6),k=>x=>Math.tanh(k*Math.abs(x))];
+function bForge(){const i=G(),dry=G(0),pre=F('highpass',60),sh=SH(),ls=F('lowshelf',140),pk=F('peaking',850,0.8),hs=F('highshelf',3000),lp=F('lowpass',7500,0.7),dc=F('highpass',30),wet=G(),o=G();
+ i.connect(dry);dry.connect(o);link(i,pre,sh,ls,pk,hs,lp,dc,wet,o);
+ return{in:i,out:o,set(p){const d=p.drive/10,c=Math.round(p.clip);const k=c===3?1+d*20:1+d*d*60;sh.curve=curve(CLIPS[c](k));
+  sm(ls.gain,(p.bass-5)*3);sm(pk.gain,(p.mid-5)*3);sm(hs.gain,(p.treble-5)*3);sm(wet.gain,p.blend/10*0.8);sm(dry.gain,1-p.blend/10);sm(o.gain,p.level/5*0.9)},destroy(){kill(i,dry,pre,sh,ls,pk,hs,lp,dc,wet,o)}}}
+function bBassDrive(){const i=G(),lp=F('lowpass',220),cl=G(),hp=F('highpass',320),sh=SH(),pl=F('lowpass',4200),pk=F('peaking',900,1,3),dg=G(),o=G();
+ link(i,lp,cl,o);link(i,hp,sh,pk,pl,dg,o);
+ return{in:i,out:o,set(p){sh.curve=curve(soft(1+Math.pow(p.drive/10,2)*40));sm(dg.gain,p.blend/10*0.9);sm(cl.gain,1);sm(o.gain,p.level/5*0.85)},destroy(){kill(i,lp,cl,hp,sh,pl,pk,dg,o)}}}
+function bEQ(){const i=G(),ls=F('lowshelf',120),pk=F('peaking',800,0.9),hs=F('highshelf',3500),o=G();link(i,ls,pk,hs,o);
+ return{in:i,out:o,set(p){sm(ls.gain,(p.bass-5)*3);sm(pk.gain,(p.mid-5)*3);sm(hs.gain,(p.treble-5)*3);sm(o.gain,p.level/5)},destroy(){kill(i,ls,pk,hs,o)}}}
+function bWah(){const i=G(),bp=F('bandpass',800,6),wg=G(2.6),dry=G(0.12),o=G(),l=LFO(1),lg=G(0),rect=SH(),el=F('lowpass',9),eg=G(0);
+ rect.curve=curve(x=>Math.abs(x));link(i,bp,wg,o);i.connect(dry);dry.connect(o);l.connect(lg);lg.connect(bp.frequency);link(i,rect,el,eg);eg.connect(bp.frequency);
+ return{in:i,out:o,set(p){const m=Math.round(p.mode);const base=m===2?180+p.pedal*50:350+p.pedal*180;sm(bp.frequency,base);sm(bp.Q,2+p.reso*1.2);
+  sm(lg.gain,m===1?base*0.65:0);sm(l.frequency,0.2+p.speed*0.5);sm(eg.gain,m===2?600+p.speed*900:0)},destroy(){kill(l,i,bp,wg,dry,o,lg,rect,el,eg)}}}
+function bChorus(){const i=G(),dry=G(),wet=G(),o=G(),dl=ctx.createDelay(0.1),l=LFO(1),lg=G(0.002);dl.delayTime.value=0.018;
+ l.connect(lg);lg.connect(dl.delayTime);i.connect(dry);dry.connect(o);i.connect(dl);dl.connect(wet);wet.connect(o);
+ return{in:i,out:o,set(p){sm(l.frequency,0.1+p.rate*0.4);sm(lg.gain,0.0003+p.depth*0.0006);sm(wet.gain,p.mix/10);sm(dry.gain,1-p.mix/22)},destroy(){kill(l,i,dry,wet,o,dl,lg)}}}
+function bFlanger(){const i=G(),dry=G(),wet=G(),o=G(),dl=ctx.createDelay(0.05),fb=G(),l=LFO(0.3),lg=G(0.002);dl.delayTime.value=0.006;
+ l.connect(lg);lg.connect(dl.delayTime);i.connect(dry);dry.connect(o);i.connect(dl);dl.connect(fb);fb.connect(dl);dl.connect(wet);wet.connect(o);
+ return{in:i,out:o,set(p){sm(l.frequency,0.05+p.rate*0.3);sm(lg.gain,0.0002+p.depth*0.0003);sm(fb.gain,p.feedback/10*0.88);sm(wet.gain,p.mix/10*0.8);sm(dry.gain,1-p.mix/25)},destroy(){kill(l,i,dry,wet,o,dl,fb,lg)}}}
+function bPhaser(){const i=G(),dry=G(0.7),wet=G(),o=G(),l=LFO(0.5),lg=G(500);const aps=[0,1,2,3,4,5].map(()=>F('allpass',900,0.55));
+ l.connect(lg);aps.forEach(a=>lg.connect(a.frequency));i.connect(dry);dry.connect(o);link(i,...aps,wet,o);
+ return{in:i,out:o,set(p){sm(l.frequency,0.05+p.rate*0.6);sm(lg.gain,100+p.depth*75);sm(wet.gain,p.mix/10*0.75)},destroy(){kill(l,i,dry,wet,o,lg,...aps)}}}
+function bTrem(){const i=G(),v=G(),o=G(),l=LFO(5),lg=G(0.4);link(i,v,o);l.connect(lg);lg.connect(v.gain);
+ return{in:i,out:o,set(p){l.type=['sine','triangle','square'][Math.round(p.shape)];sm(l.frequency,0.8+p.rate*1.3);const d=p.depth/10;sm(v.gain,1-d/2);sm(lg.gain,d/2*(Math.round(p.shape)===2?0.8:1))},destroy(){kill(l,i,v,o,lg)}}}
+function bLofi(){const i=G(),dl=ctx.createDelay(0.05),l=LFO(0.9),lg=G(0),sh=SH(),lp=F('lowpass',3000,0.9),hp=F('highpass',180),o=G();dl.delayTime.value=0.012;
+ l.connect(lg);lg.connect(dl.delayTime);link(i,dl,sh,hp,lp,o);let lb=-1;
+ return{in:i,out:o,set(p){const bits=Math.round(12-p.crush);if(bits!==lb){lb=bits;const s=Math.pow(2,bits-1);sh.curve=curve(x=>Math.round(x*s)/s,4096)}
+  sm(lp.frequency,800+p.tone*700);sm(lg.gain,p.warble*0.0009);sm(l.frequency,0.5+p.warble*0.25);sm(o.gain,p.level/5*1.1)},destroy(){kill(l,i,dl,lg,sh,lp,hp,o)}}}
+function bDelay(){const i=G(),dry=G(),dl=ctx.createDelay(2),lp=F('lowpass',5000),fb=G(),wet=G(),o=G();
+ i.connect(dry);dry.connect(o);link(i,dl,lp,fb,dl);lp.connect(wet);wet.connect(o);
+ return{in:i,out:o,set(p){dl.delayTime.setTargetAtTime(0.06+p.time/10*0.94,ctx.currentTime,0.08);sm(fb.gain,p.feedback/10*0.85);sm(lp.frequency,1200+p.tone*800);sm(wet.gain,p.mix/10)},destroy(){kill(i,dry,dl,lp,fb,wet,o)}}}
+function makeIR(sec){const sr=ctx.sampleRate,len=Math.floor(sr*sec),b=ctx.createBuffer(2,len,sr);for(let c=0;c<2;c++){const d=b.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3)}return b}
+function bReverb(){const i=G(),dry=G(),cv=ctx.createConvolver(),pre=ctx.createDelay(0.2),lp=F('lowpass',5000),wet=G(),o=G();pre.delayTime.value=0.02;
+ i.connect(dry);dry.connect(o);link(i,pre,cv,lp,wet,o);let ls=-1,tm;
+ return{in:i,out:o,set(p){if(p.size!==ls){const first=ls<0;ls=p.size;clearTimeout(tm);const go=()=>{cv.buffer=makeIR(0.6+p.size*0.65)};first?go():tm=setTimeout(go,180)}
+  sm(lp.frequency,1500+p.tone*900);sm(wet.gain,p.mix/10*1.1);sm(dry.gain,1-p.mix/30)},destroy(){clearTimeout(tm);kill(i,dry,cv,pre,lp,wet,o)}}}
+
+const PT={
+ comp:{label:'Compressor',color:'#2563eb',cat:'Dynamics',desc:'Squash peaks for sustain & punch',knobs:[['sustain','Sustain',5],['attack','Attack',3],['level','Level',5]],b:bComp},
+ boost:{label:'Clean Boost',color:'#e7e5e4',cat:'Dynamics',desc:'Hit the amp harder, add sparkle',knobs:[['boost','Boost',4],['bright','Bright',5]],b:bBoost},
+ od:{label:'Overdrive',color:'#16a34a',cat:'Drive',desc:'Smooth, amp-like breakup',knobs:[['drive','Drive',5],['tone','Tone',5],['level','Level',6]],b:()=>bDrive('od')},
+ dist:{label:'Distortion',color:'#f97316',cat:'Drive',desc:'Tight, aggressive clipping',knobs:[['drive','Dist',6],['tone','Tone',5],['level','Level',5]],b:()=>bDrive('dist')},
+ fuzz:{label:'Fuzz',color:'#9333ea',cat:'Drive',desc:'Wild, woolly, saturated fuzz',knobs:[['drive','Fuzz',7],['tone','Tone',5],['level','Volume',5]],b:()=>bDrive('fuzz')},
+ bassdrive:{label:'Bass Drive',color:'#0ea5e9',cat:'Drive',desc:'Grit on top, clean lows intact',knobs:[['blend','Blend',5],['drive','Drive',5],['level','Level',5]],b:bBassDrive},
+ forge:{label:'Forge Drive',color:'#e11d48',cat:'Custom',desc:'Design your own dirt: pick a clipping shape, shape the EQ, blend it with your clean signal',knobs:[['clip','Clip',0,['Soft','Hard','Asym','Fold','Octave']],['drive','Drive',5],['bass','Bass',5],['mid','Mid',5],['treble','Treble',5],['blend','Blend',10],['level','Level',5]],b:bForge},
+ eq:{label:'3-Band EQ',color:'#52525b',cat:'Filter',desc:'Shape lows, mids and highs',knobs:[['bass','Bass',5],['mid','Mid',5],['treble','Treble',5],['level','Level',5]],b:bEQ},
+ wah:{label:'Wah / Filter',color:'#facc15',cat:'Filter',desc:'Manual wah, auto-sweep or funky envelope filter',knobs:[['mode','Mode',0,['Manual','Auto','Env']],['pedal','Pedal',5],['speed','Speed/Sens',5],['reso','Reso',5]],b:bWah},
+ chorus:{label:'Chorus',color:'#14b8a6',cat:'Modulation',desc:'Lush, shimmering doubling',knobs:[['rate','Rate',3],['depth','Depth',5],['mix','Mix',5]],b:bChorus},
+ phaser:{label:'Phaser',color:'#ec4899',cat:'Modulation',desc:'Swirling, swooshing sweep',knobs:[['rate','Rate',3],['depth','Depth',6],['mix','Mix',6]],b:bPhaser},
+ flanger:{label:'Flanger',color:'#6366f1',cat:'Modulation',desc:'Jet-plane comb filtering',knobs:[['rate','Rate',2],['depth','Depth',6],['feedback','Regen',5],['mix','Mix',5]],b:bFlanger},
+ trem:{label:'Tremolo',color:'#a16207',cat:'Modulation',desc:'Pulsing volume, surf to stutter',knobs:[['rate','Rate',4],['depth','Depth',6],['shape','Wave',0,['Sine','Tri','Square']]],b:bTrem},
+ lofi:{label:'Lo-Fi Tape',color:'#78716c',cat:'Modulation',desc:'Bit-crush + wobbly tape warble',knobs:[['crush','Crush',3],['tone','Tone',5],['warble','Warble',4],['level','Level',5]],b:bLofi},
+ delay:{label:'Delay',color:'#0891b2',cat:'Ambience',desc:'Echoes from slapback to huge',knobs:[['time','Time',4],['feedback','Repeats',4],['tone','Tone',5],['mix','Mix',3]],b:bDelay},
+ reverb:{label:'Reverb',color:'#334155',cat:'Ambience',desc:'Room to cathedral space',knobs:[['size','Size',4],['tone','Tone',6],['mix','Mix',3]],b:bReverb},
+};
+const CATS=['Custom','Dynamics','Drive','Filter','Modulation','Ambience'];
+const SWATCH=['#e11d48','#f97316','#facc15','#16a34a','#14b8a6','#0ea5e9','#2563eb','#6366f1','#9333ea','#ec4899','#e7e5e4','#78716c','#52525b','#1f1f23','#a16207','#7f1d1d'];
+
+/* ================= amps ================= */
+const AMPS={
+ clean:{name:'Clean ’65',inst:'guitar',desc:'Glassy American clean, huge headroom',drive:3,ls:[120,1],mid:[550,-3],hs:2,hp:75,cab:6200,res:[120,2],out:1.0},
+ chime:{name:'Chime 30',inst:'guitar',desc:'British top-boost jangle & sparkle',drive:9,ls:[120,0],mid:[1300,3],hs:3,hp:90,cab:5600,res:[115,2],out:0.85},
+ crunch:{name:'British Crunch',inst:'guitar',desc:'Classic rock plexi-style roar',drive:20,ls:[110,0],mid:[800,2.5],hs:0,hp:95,cab:4800,res:[110,3],out:0.72},
+ lead:{name:'High-Gain Lead',inst:'guitar',desc:'Saturated modern metal & solos',drive:75,ls:[110,0],mid:[750,-1],hs:1,hp:120,cab:4500,res:[100,4],out:0.55},
+ tubebass:{name:'Tube Bass 8x10',inst:'bass',desc:'Warm, fat, classic rock bass',drive:4,ls:[70,3],mid:[500,1],hs:-2,hp:32,cab:3000,res:[70,3],out:1.0},
+ modernbass:{name:'Modern Bass 4x10',inst:'bass',desc:'Hi-fi, punchy, tweeter snap',drive:1.5,ls:[60,2],mid:[450,-3],hs:3,hp:30,cab:7500,res:[90,2],out:1.05},
+ grindbass:{name:'Grind Bass Stack',inst:'bass',desc:'Growling overdriven bass',drive:28,ls:[80,2],mid:[700,3],hs:0,hp:40,cab:3800,res:[80,3],out:0.75},
+ direct:{name:'Direct Out',inst:'any',desc:'No amp sim — plug your phone into a real guitar or bass amp',drive:0,out:1}
+};
+const AMPDEF={guitar:'crunch',bass:'tubebass'};
+function buildAmp(){
+ const i=G(),pre=F('highpass',80),sh=SH(),ls=F('lowshelf',120),pk=F('peaking',650,0.8),hs=F('highshelf',3000),pw=SH(),pres=F('highshelf',5000),c1=F('lowpass',5000,0.9),c2=F('lowpass',5000,0.6),res=F('peaking',110,1.2,3),mv=G(),ampG=G(),dir=G(0),dls=F('lowshelf',120),dpk=F('peaking',650,0.7),dhs=F('highshelf',3000),o=G();
+ pw.curve=curve(soft(1.4));
+ link(i,pre,sh,ls,pk,hs,pw,pres,c1,c2,res,mv,ampG,o);link(i,dls,dpk,dhs,dir,o);
+ let lastK=-1;
+ return{in:i,out:o,set(a){const m=AMPS[a.model]||AMPS.crunch;
+  if(a.model==='direct'){sm(ampG.gain,0);sm(dir.gain,a.master/10*1.3);sm(dls.gain,(a.bass-5)*2.4);sm(dpk.gain,(a.mid-5)*2.4);sm(dhs.gain,(a.treble-5)*2.4);return}
+  sm(dir.gain,0);sm(ampG.gain,1);const g=a.gain/10;const k=0.6+g*g*m.drive;if(Math.abs(k-lastK)>0.01){lastK=k;sh.curve=curve(soft(k))}
+  sm(pre.frequency,m.hp);ls.frequency.value=m.ls[0];sm(ls.gain,(a.bass-5)*2.6+m.ls[1]);pk.frequency.value=m.mid[0];sm(pk.gain,(a.mid-5)*2.6+m.mid[1]);sm(hs.gain,(a.treble-5)*2.6+m.hs);
+  sm(pres.gain,(a.presence-5)*2.2);sm(c1.frequency,m.cab);sm(c2.frequency,m.cab*1.15);res.frequency.value=m.res[0];sm(res.gain,m.res[1]);sm(mv.gain,a.master/10*m.out*1.4)}}}
+
+/* ================= instrument ================= */
+const TUN={guitar:[40,45,50,55,59,64],bass:[28,33,38,43]};
+const SNAMES={guitar:['E','A','D','G','B','e'],bass:['E','A','D','G']};
+const THICK={guitar:[3.8,3.2,2.6,2,1.5,1.1],bass:[5.2,4.5,3.8,3.1]};
+const NOTE=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const CH={C:[-1,3,2,0,1,0],G:[3,2,0,0,0,3],D:[-1,-1,0,2,3,2],A:[-1,0,2,2,2,0],E:[0,2,2,1,0,0],F:[1,3,3,2,1,1],Am:[-1,0,2,2,1,0],Em:[0,2,2,0,0,0],Dm:[-1,-1,0,2,3,1],Bm:[-1,2,4,4,3,2],E5:[0,2,2,-1,-1,-1],A5:[-1,0,2,2,-1,-1],G5:[3,5,5,-1,-1,-1],D5:[-1,5,7,7,-1,-1],C5:[-1,3,5,5,-1,-1]};
+const PADS=['C','G','D','A','E','F','Am','Em','Dm','Bm','E5','A5'];
+function shape(name){if(ST.inst==='guitar')return CH[name];const r=NOTE.indexOf(name.match(/^[A-G]#?/)[0]);let s=0,f=(r-4+12)%12;if(f>5){s=1;f=(r-9+12)%12}const out=[-1,-1,-1,-1];out[s]=f;out[s+1]=f+2;out[s+2]=f+2;return out}
+const ST={inst:'guitar',mode:'chords',pm:false,chord:'E',tab:'play',input:5,master:6.5,loop:false};
+let voices=[],cache={};
+function ksBuf(freq,pm){const bass=ST.inst==='bass';const key=(bass?'b':'g')+freq.toFixed(3)+(pm?'m':'');if(cache[key])return cache[key];
+ const sr=ctx.sampleRate,N=Math.floor(sr/freq),dur=pm?0.5:(bass?3.6:3.0),len=Math.floor(sr*dur),buf=ctx.createBuffer(1,len,sr),d=buf.getChannelData(0);
+ const bright=bass?0.32:(pm?0.3:0.62);let pv=0,mean=0;for(let i=0;i<N;i++){pv+=bright*((Math.random()*2-1)-pv);d[i]=pv;mean+=pv}mean/=N;for(let i=0;i<N;i++)d[i]-=mean;
+ const t60=pm?0.18:(bass?4.2:2.8),S=Math.pow(10,-3/(freq*t60));
+ d[N]=S*d[0];for(let i=N+1;i<len;i++)d[i]=S*0.5*(d[i-N]+d[i-N-1]);
+ let peak=0;for(let i=0;i<Math.min(len,N*4);i++)peak=Math.max(peak,Math.abs(d[i]));const nrm=0.6/(peak||1);
+ const fade=Math.floor(sr*0.05);for(let i=0;i<len;i++){d[i]*=nrm;if(i>len-fade)d[i]*=(len-i)/fade}
+ return cache[key]={buf,rate:freq/(sr/(N+0.5))}}
+function pluck(s,f,when,vel=0.8,pm=ST.pm){if(!ctx||f<0)return;const t=when||ctx.currentTime;const midi=TUN[ST.inst][s]+f;const freq=440*Math.pow(2,(midi-69)/12);
+ const{buf,rate}=ksBuf(freq,pm);const src=ctx.createBufferSource();src.buffer=buf;src.playbackRate.value=rate;const g=ctx.createGain();g.gain.value=vel;src.connect(g);g.connect(srcBus);
+ const old=voices[s];if(old){try{old.g.gain.setTargetAtTime(0,t,0.008);old.src.stop(t+0.06)}catch(e){}}
+ src.start(t);const v={src,g};voices[s]=v;src.onended=()=>{g.disconnect();if(voices[s]===v)voices[s]=null};
+ vib(s,f,Math.max(0,(t-ctx.currentTime)*1000))}
+function strum(name,dir='down',when,vel=0.8){const sh=shape(name);if(!sh)return;const t=when||ctx.currentTime;let idx=sh.map((_,i)=>i);if(dir==='up')idx.reverse();let n=0;
+ idx.forEach(s=>{if(sh[s]<0)return;pluck(s,sh[s],t+n*0.013,vel*(0.85+Math.random()*0.15));n++})}
+function stopVoices(){voices.forEach(v=>{if(v)try{v.src.stop()}catch(e){}});voices=[]}
+function vib(s,f,delay){setTimeout(()=>{document.querySelectorAll(`.str[data-s="${s}"]`).forEach(el=>{el.classList.remove('vib');void el.offsetWidth;el.classList.add('vib')});
+ const c=document.querySelector(`.fc[data-s="${s}"][data-f="${f}"]`);if(c){c.classList.remove('hit');void c.offsetWidth;c.classList.add('hit')}},delay)}
+
+/* riff loop */
+const RIFFS={guitar:['E5',[0,0,1],[0,0,1],'G5',[0,0,1],[0,0,1],'A5',[0,0,1],'E5',[0,0,1],[0,0,1],'D5',[0,0,1],'C5',[0,0,1],'A5'],
+ bass:[[0,0],null,[0,0],[0,12],[0,0],null,[1,2],[1,0],[0,3],null,[0,3],[0,15],[0,5],null,[1,2],[1,4]]};
+let loopTimer=null,nextT=0,stepI=0;
+function startLoop(){nextT=ctx.currentTime+0.06;stepI=0;loopTimer=setInterval(()=>{const r=RIFFS[ST.inst],dt=60/112/2;
+ while(nextT<ctx.currentTime+0.15){const st=r[stepI%r.length];if(st){if(typeof st==='string'){if(ST.inst==='guitar')strum(st,'down',nextT,0.75)}else pluck(st[0],st[1],nextT,st[2]?0.85:0.75,ST.inst==='guitar'?!!st[2]:ST.pm)}nextT+=dt;stepI++}},30)}
+function stopLoop(){clearInterval(loopTimer);loopTimer=null}
+
+/* ================= tone state ================= */
+let tone,nodes={},DB={tones:[],lib:[],cur:null};
+try{DB=Object.assign(DB,JSON.parse(localStorage.getItem('toneforge.v1'))||{})}catch(e){}
+let saveT;function persist(){clearTimeout(saveT);saveT=setTimeout(()=>{DB.cur=tone;try{localStorage.setItem('toneforge.v1',JSON.stringify(DB))}catch(e){}},300)}
+const defP=type=>{const p={};PT[type].knobs.forEach(k=>p[k[0]]=k[2]);return p};
+const mk=(type,params={},name,color)=>({id:uid(),type,name:name||PT[type].label,color:color||PT[type].color,on:true,p:Object.assign(defP(type),params)});
+const A=(model,o)=>Object.assign({model,gain:5,bass:5,mid:5,treble:5,presence:5,master:6},o);
+const PRESETS=[
+ {name:'Classic Crunch',inst:'guitar',amp:A('crunch',{gain:6,mid:6,treble:6}),pedals:[mk('od',{drive:4,tone:6,level:6}),mk('delay',{time:3.5,feedback:3,mix:2.5}),mk('reverb',{size:3,mix:2})]},
+ {name:'Glass Clean',inst:'guitar',amp:A('clean',{gain:3,treble:6.5,master:6.5}),pedals:[mk('comp',{sustain:5}),mk('chorus',{rate:3,depth:5,mix:5}),mk('reverb',{size:5,mix:3.5})]},
+ {name:'Modern Metal',inst:'guitar',amp:A('lead',{gain:7.5,bass:6,mid:4,treble:6,presence:6,master:5.5}),pedals:[mk('od',{drive:0.5,tone:7,level:7},'Tight Boost','#1f1f23'),mk('eq',{bass:4,mid:6.5,treble:5.5}),mk('reverb',{size:2,mix:1.2})]},
+ {name:'Fuzz Cathedral',inst:'guitar',amp:A('chime',{gain:4}),pedals:[mk('fuzz',{drive:8,tone:5}),mk('flanger',{rate:1,depth:6,feedback:6,mix:5}),mk('delay',{time:5,feedback:5,mix:3.5}),mk('reverb',{size:8,mix:5})]},
+ {name:'Bedroom Lo-Fi',inst:'guitar',amp:A('clean',{gain:4,treble:4}),pedals:[mk('lofi',{crush:3,tone:4,warble:5}),mk('trem',{rate:4,depth:5}),mk('reverb',{size:4,mix:3})]},
+ {name:'Surf Spring',inst:'guitar',amp:A('clean',{gain:4,treble:7,bass:4}),pedals:[mk('trem',{rate:6,depth:6}),mk('reverb',{size:5,tone:8,mix:5})]},
+ {name:'Funk Bass',inst:'bass',amp:A('modernbass',{gain:3,bass:6,mid:4,treble:6}),pedals:[mk('comp',{sustain:6,attack:2}),mk('wah',{mode:2,pedal:2,speed:6,reso:6},'Envelope Filter')]},
+ {name:'Grit Bass',inst:'bass',amp:A('tubebass',{gain:5,bass:6,mid:6}),pedals:[mk('comp',{sustain:4}),mk('bassdrive',{blend:6,drive:6})]},
+ {name:'Synth Octave Bass',inst:'bass',amp:A('grindbass',{gain:4}),pedals:[mk('forge',{clip:4,drive:6,blend:5,treble:4},'Octave Rectifier','#7f1d1d'),mk('chorus',{rate:2,depth:4,mix:3})]},
+];
+function sanitize(t){if(!t||!Array.isArray(t.pedals))throw 0;const o={name:String(t.name||'Imported tone').slice(0,40),inst:t.inst==='bass'?'bass':'guitar',amp:A(AMPS[t.amp&&t.amp.model]?t.amp.model:AMPDEF[t.inst==='bass'?'bass':'guitar'],{}),pedals:[]};
+ ['gain','bass','mid','treble','presence','master'].forEach(k=>{const v=+(t.amp||{})[k];if(isFinite(v))o.amp[k]=clamp(v,0,10)});
+ t.pedals.slice(0,16).forEach(p=>{if(!PT[p.type])return;const d=mk(p.type,{},String(p.name||'').slice(0,22)||undefined,/^#[0-9a-f]{6}$/i.test(p.color)?p.color:undefined);d.on=p.on!==false;
+  PT[p.type].knobs.forEach(k=>{const v=+(p.p||{})[k[0]];if(isFinite(v))d.p[k[0]]=clamp(v,0,k[3]?k[3].length-1:10)});o.pedals.push(d)});return o}
+function buildNode(p){const n=PT[p.type].b();n.set(p.p);nodes[p.id]=n;return n}
+function loadTone(t,quiet){Object.values(nodes).forEach(n=>n.destroy());nodes={};tone=sanitize(JSON.parse(JSON.stringify(t)));
+ tone.pedals.forEach(buildNode);if(tone.inst!==ST.inst){ST.inst=tone.inst;stopVoices()}amp.set(tone.amp);rebuildChain();renderAll();persist();if(!quiet)toast(`Loaded “${tone.name}”`)}
+function rebuildChain(){try{inGain.disconnect()}catch(e){}tone.pedals.forEach(p=>{try{nodes[p.id].out.disconnect()}catch(e){}});
+ let prev=inGain;tone.pedals.forEach(p=>{if(!p.on)return;prev.connect(nodes[p.id].in);prev=nodes[p.id].out});prev.connect(amp.in)}
+function applyGlobals(){sm(inGain.gain,ST.input/5);sm(masterG.gain,Math.pow(ST.master/10,2)*1.6)}
+
+/* ================= audio init ================= */
+function initAudio(){const AC=window.AudioContext||window.webkitAudioContext;ctx=new AC({latencyHint:'interactive'});
+ srcBus=G();inGain=G();srcBus.connect(inGain);amp=buildAmp();limiter=ctx.createDynamicsCompressor();limiter.threshold.value=-4;limiter.ratio.value=20;limiter.attack.value=0.002;limiter.release.value=0.1;
+ masterG=G();analyser=ctx.createAnalyser();analyser.fftSize=1024;scopeBuf=new Float32Array(analyser.fftSize);link(amp.out,limiter,masterG,analyser,ctx.destination);
+ applyGlobals();loadTone(DB.cur&&DB.cur.pedals?DB.cur:PRESETS[0],true);drawScope()}
+function drawScope(){requestAnimationFrame(drawScope);const c=$('#scope'),x=c.getContext('2d'),w=c.width,h=c.height;analyser.getFloatTimeDomainData(scopeBuf);x.clearRect(0,0,w,h);
+ x.strokeStyle='#ff8a1f';x.lineWidth=2.5;x.beginPath();for(let i=0;i<scopeBuf.length;i+=4){const px=i/scopeBuf.length*w,py=h/2-scopeBuf[i]*h*0.9;i?x.lineTo(px,py):x.moveTo(px,py)}x.stroke()}
+
+/* ================= UI: knobs ================= */
+function rot(v,steps){return -135+(steps?v/(steps.length-1):v/10)*270}
+function knob(scope,id,key,label,val,steps){const disp=steps?steps[Math.round(val)]:(+val).toFixed(1);
+ return `<div class="knob" data-s="${scope}" data-id="${id}" data-k="${key}"${steps?` data-steps="${steps.join('|')}"`:''}><div class="dial"><div class="ptr" style="transform:rotate(${rot(val,steps)}deg)"></div></div><div class="kv">${disp}</div><div class="kl">${label}</div></div>`}
+function getVal(s,id,k){return s==='pedal'?tone.pedals.find(p=>p.id===id).p[k]:s==='amp'?tone.amp[k]:ST[k]}
+function setVal(s,id,k,v){if(s==='pedal'){const p=tone.pedals.find(p=>p.id===id);p.p[k]=v;nodes[id].set(p.p)}else if(s==='amp'){tone.amp[k]=v;amp.set(tone.amp)}else{ST[k]=v;applyGlobals()}if(s!=='g')persist()}
+let drag=null;
+document.addEventListener('pointerdown',e=>{const k=e.target.closest('.knob');if(!k)return;e.preventDefault();const steps=k.dataset.steps?k.dataset.steps.split('|'):null;
+ drag={el:k,y:e.clientY,v0:getVal(k.dataset.s,k.dataset.id,k.dataset.k),steps,pid:e.pointerId,moved:false};try{k.setPointerCapture(e.pointerId)}catch(_){}k.classList.add('act')});
+document.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.pid)return;const dy=drag.y-e.clientY;if(Math.abs(dy)>4)drag.moved=true;if(!drag.moved)return;
+ let v=drag.steps?clamp(Math.round(drag.v0+dy/38),0,drag.steps.length-1):clamp(Math.round((drag.v0+dy/14)*10)/10,0,10);updKnob(v)});
+function updKnob(v){const k=drag.el;setVal(k.dataset.s,k.dataset.id,k.dataset.k,v);k.querySelector('.ptr').style.transform=`rotate(${rot(v,drag.steps)}deg)`;k.querySelector('.kv').textContent=drag.steps?drag.steps[v]:v.toFixed(1)}
+const endDrag=e=>{if(!drag||e.pointerId!==drag.pid)return;if(!drag.moved&&drag.steps)updKnob((Math.round(drag.v0)+1)%drag.steps.length);drag.el.classList.remove('act');drag=null};
+document.addEventListener('pointerup',endDrag);document.addEventListener('pointercancel',endDrag);
+
+/* ================= UI: render ================= */
+function renderAll(){$('#tname').textContent=tone.name;renderSegs();renderInst();renderChips();renderBoard();renderAmp();renderTones()}
+function renderSegs(){document.querySelectorAll('#instSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===ST.inst));document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===ST.mode));
+ $('#pmBtn').classList.toggle('on',ST.pm);$('#loopBtn').classList.toggle('on',!!loopTimer);$('#loopBtn').textContent=loopTimer?'⏹ Stop riff':'🔁 Loop riff'}
+function renderChips(){const h=tone.pedals.map(p=>`<button class="chip ${p.on?'':'off'}" style="--pc:${p.color}" data-tog="${p.id}"><i></i>${esc(p.name)}</button><span class="arrow">›</span>`).join('');
+ $('#chips').innerHTML=(h||'<span class="arrow">No pedals</span><span class="arrow">›</span>')+`<button class="chip amp" data-goamp>▣ ${esc(AMPS[tone.amp.model].name)}</button>`}
+function renderInst(){const n=TUN[ST.inst].length,a=$('#instArea');
+ if(ST.mode==='chords'){const sh=shape(ST.chord);
+  let rows='';for(let r=0;r<n;r++){const s=n-1-r;rows+=`<div class="str ${sh[s]<0?'mute':''}" data-s="${s}"><i style="height:${THICK[ST.inst][s]}px"></i><b>${SNAMES[ST.inst][s]}</b></div>`}
+  a.innerHTML=`<div class="pads">${PADS.map(c=>`<button class="pad ${c===ST.chord?'on':''}" data-ch="${c}">${c}</button>`).join('')}</div>
+  <div class="strum" id="strum"><div class="hole"></div><div class="cname">${ST.chord}${ST.inst==='bass'?' · root-5th-octave':''}</div>${rows}</div>
+  <div class="strumbtns"><button class="btn" data-strum="down">↓ Strum</button><button class="btn" data-strum="up">↑ Strum</button></div>
+  <p class="hint">Tap a chord, then swipe across the strings to strum — or tap one string to pick it.</p>`;bindStrum()}
+ else{const FR=16;let g=`<div class="fbg" style="grid-template-columns:44px repeat(${FR-1},62px)">`;
+  for(let r=0;r<n;r++){const s=n-1-r;for(let f=0;f<FR;f++){const nn=NOTE[(TUN[ST.inst][s]+f)%12];g+=`<div class="fc ${f===0?'open':''}" data-s="${s}" data-f="${f}" style="--th:${THICK[ST.inst][s]}px"><span class="nn">${f===0?SNAMES[ST.inst][s]:nn}</span></div>`}}
+  for(let f=0;f<FR;f++)g+=`<div class="fmk ${[3,5,7,9,15].includes(f)?'dot':''} ${f===12?'dot dbl':''}">${f===0?'':(![3,5,7,9,12,15].includes(f)?f:'')}</div>`;
+  a.innerHTML=g+'</div>';a.innerHTML=`<div class="fb">${a.innerHTML}</div><p class="hint">Tap any fret to play a note. Swipe sideways to reach higher frets. Use several fingers for chords.</p>`;
+  a.querySelectorAll('.fc').forEach(c=>c.addEventListener('pointerdown',e=>{pluck(+c.dataset.s,+c.dataset.f,0,0.85)}))}}
+function bindStrum(){const el=$('#strum'),n=TUN[ST.inst].length,sp={};
+ const at=e=>{const r=el.getBoundingClientRect();return n-1-clamp(Math.floor((e.clientY-r.top)/r.height*n),0,n-1)};
+ const pk=s=>{const f=shape(ST.chord)[s];if(f>=0)pluck(s,f,0,0.8)};
+ el.addEventListener('pointerdown',e=>{e.preventDefault();try{el.setPointerCapture(e.pointerId)}catch(_){}const s=at(e);sp[e.pointerId]=s;pk(s)});
+ el.addEventListener('pointermove',e=>{if(!(e.pointerId in sp))return;const s=at(e),l=sp[e.pointerId];if(s===l)return;const st=s>l?1:-1;for(let x=l+st;;x+=st){pk(x);if(x===s)break}sp[e.pointerId]=s});
+ const up=e=>{delete sp[e.pointerId]};el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up)}
+function renderBoard(){const b=$('#board');if(!tone.pedals.length){b.innerHTML='<div class="empty">Your board is empty.<br>Tap <b>＋ Add pedal</b> to start building.</div>';return}
+ b.innerHTML=tone.pedals.map((p,i)=>{const d=PT[p.type];return `${i?'<div class="cable"></div>':''}<div class="pedal ${p.on?'':'off'}" style="--pc:${p.color};--ink:${ink(p.color)}" data-id="${p.id}">
+  <div class="ptop"><span class="led"></span><button class="pname" data-act="edit">${esc(p.name)}${p.name!==d.label?`<small>${d.label}</small>`:''}</button>
+  <div class="pbtns"><button data-act="up" aria-label="Move up">▲</button><button data-act="down" aria-label="Move down">▼</button><button data-act="del" aria-label="Remove">✕</button></div></div>
+  <div class="knobs">${d.knobs.map(k=>knob('pedal',p.id,k[0],k[1],p.p[k[0]],k[3])).join('')}</div>
+  <button class="foot" data-act="toggle" aria-label="Footswitch"></button></div>`}).join('')}
+function renderAmp(){const a=tone.amp,m=AMPS[a.model],cls=m.inst==='bass'?'bass':a.model==='direct'?'direct':'';
+ const ks=a.model==='direct'?[['bass','Bass'],['mid','Mid'],['treble','Treble'],['master','Output']]:[['gain','Gain'],['bass','Bass'],['mid','Mid'],['treble','Treble'],['presence','Presence'],['master','Master']];
+ const grp=inst=>Object.entries(AMPS).filter(([,v])=>v.inst===inst).map(([k,v])=>`<button class="ampbtn ${k===a.model?'on':''}" data-amp="${k}"><b>${v.name}</b><span>${v.desc}</span></button>`).join('');
+ $('#ampArea').innerHTML=`<div class="ampface ${cls}"><div class="amphead"><span class="brand">${m.name}</span><span class="badge">${m.inst==='any'?'Real amp mode':m.inst+' amp'}</span></div>
+  <div class="amppanel"><div class="knobs" style="margin:2px 0">${ks.map(([k,l])=>knob('amp','amp',k,l,a[k])).join('')}</div></div><div class="grille"></div></div>
+  ${a.model==='direct'?'<div class="card"><p>Connect your phone\'s headphone output (or a USB-C/Lightning headphone adapter) to your amp\'s <b>input</b> or <b>AUX/FX return</b> with a 3.5mm → ¼" cable. Start with Output and the amp volume low, then bring them up.</p></div>':''}
+  <h3>Guitar amps</h3><div class="amps">${grp('guitar')}</div><h3>Bass amps</h3><div class="amps">${grp('bass')}</div>
+  <h3>Use a real amp</h3><div class="amps">${grp('any')}</div>
+  <h3>Global</h3><div class="card"><div class="globals">${knob('g','g','input','Input',ST.input)}${knob('g','g','master','Volume',ST.master)}</div></div>
+  <p class="hint">Every amp works with both instruments — try bass through the British Crunch, or guitar through the Tube Bass 8x10.</p>`}
+function renderTones(){const item=(t,i,mine)=>`<div class="titem"><span class="tag ${t.inst==='bass'?'bass':''}">${t.inst}</span><div class="tt"><b>${esc(t.name)}</b><span>${t.pedals.map(p=>esc(p.name)).join(' › ')||'No pedals'} › ${AMPS[t.amp.model]?AMPS[t.amp.model].name:''}</span></div>
+  <button class="btn sm" data-load="${mine?'m':'p'}${i}">Load</button>${mine?`<button class="btn sm" data-tdel="${i}">✕</button>`:''}</div>`;
+ $('#tonesArea').innerHTML=`<h2>Tones</h2>
+  <h3>Save current tone</h3><div class="row"><input type="text" id="tnIn" maxlength="40" value="${esc(tone.name)}"><button class="btn pri" id="tSave">Save</button></div>
+  <h3>My tones</h3><div class="tlist">${DB.tones.length?DB.tones.map((t,i)=>item(t,i,1)).join(''):'<div class="empty" style="padding:16px">Saved tones show up here.</div>'}</div>
+  <h3>Factory tones</h3><div class="tlist">${PRESETS.map((t,i)=>item(t,i,0)).join('')}</div>
+  <h3>Share a tone</h3><div class="card"><button class="btn" id="tCopy" style="width:100%">Copy tone code</button>
+   <textarea id="tCode" placeholder="Paste a tone code here…" style="margin-top:10px"></textarea><button class="btn" id="tImp" style="width:100%;margin-top:8px">Import tone</button></div>
+  <h3>How to connect</h3><div class="card">
+   <p><b>No instrument:</b> use the Play tab — chord pads + strum strings, or a full fretboard for guitar and bass.</p>
+   <p><b>Into a real amp:</b> choose <b>Direct Out</b> on the Amp tab, then run your phone's headphone out into your guitar or bass amp. Use a pedal-only tone to make the phone your pedalboard.</p>
+   <p><b>Live guitar/bass in:</b> needs an audio interface (iRig-style) and opening the app from its own web address — live input is blocked inside the Claude viewer.</p></div>
+  <div class="credit">TONEFORGE · BY COLLIN FEATHERSTONE</div>`}
+
+/* ================= UI: events ================= */
+function toast(msg,action,fn){const t=$('#toast');t.innerHTML=esc(msg)+(action?`<button>${esc(action)}</button>`:'');if(action)t.querySelector('button').onclick=()=>{fn();t.classList.remove('on')};t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),action?4500:2200)}
+function goTab(t){ST.tab=t;document.querySelectorAll('.tab').forEach(s=>s.classList.toggle('on',s.id==='t-'+t));document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));$('#main').scrollTop=0}
+$('#nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b)goTab(b.dataset.t)});
+$('#instSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.dataset.v===ST.inst)return;ST.inst=b.dataset.v;stopVoices();
+ const m=AMPS[tone.amp.model];if(m.inst!=='any'&&m.inst!==ST.inst){AMPDEF[m.inst]=tone.amp.model;tone.amp.model=AMPDEF[ST.inst];amp.set(tone.amp);toast(`Amp → ${AMPS[tone.amp.model].name} (any amp works with either)`)}
+ tone.inst=ST.inst;persist();renderSegs();renderInst();renderChips();renderAmp()});
+$('#modeSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;ST.mode=b.dataset.v;renderSegs();renderInst()});
+$('#instArea').addEventListener('pointerdown',e=>{const p=e.target.closest('[data-ch]');if(p){ST.chord=p.dataset.ch;document.querySelectorAll('.pad').forEach(x=>x.classList.toggle('on',x===p));
+  const sh=shape(ST.chord);document.querySelectorAll('.str').forEach(s=>s.classList.toggle('mute',sh[+s.dataset.s]<0));$('.cname').textContent=ST.chord+(ST.inst==='bass'?' · root-5th-octave':'');strum(ST.chord,'down');return}
+ const s=e.target.closest('[data-strum]');if(s)strum(ST.chord,s.dataset.strum)});
+$('#pmBtn').onclick=()=>{ST.pm=!ST.pm;renderSegs()};
+$('#loopBtn').onclick=()=>{loopTimer?stopLoop():startLoop();renderSegs()};
+$('#chips').addEventListener('click',e=>{const t=e.target.closest('[data-tog]');if(t){const p=tone.pedals.find(p=>p.id===t.dataset.tog);p.on=!p.on;rebuildChain();renderChips();renderBoard();persist();return}if(e.target.closest('[data-goamp]'))goTab('amp')});
+$('#board').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const id=b.closest('.pedal').dataset.id,i=tone.pedals.findIndex(p=>p.id===id),p=tone.pedals[i],act=b.dataset.act;
+ if(act==='toggle'){p.on=!p.on;b.closest('.pedal').classList.toggle('off',!p.on);rebuildChain();renderChips();persist();return}
+ if(act==='up'&&i>0){[tone.pedals[i-1],tone.pedals[i]]=[tone.pedals[i],tone.pedals[i-1]]}
+ else if(act==='down'&&i<tone.pedals.length-1){[tone.pedals[i+1],tone.pedals[i]]=[tone.pedals[i],tone.pedals[i+1]]}
+ else if(act==='del'){tone.pedals.splice(i,1);rebuildChain();const n=nodes[id];renderBoard();renderChips();persist();
+  toast(`Removed ${p.name}`,'Undo',()=>{tone.pedals.splice(i,0,p);rebuildChain();renderBoard();renderChips();persist()});setTimeout(()=>{if(!tone.pedals.includes(p)&&nodes[id]===n){n.destroy();delete nodes[id]}},5000);return}
+ else if(act==='edit'){openEdit(id);return}else return;
+ rebuildChain();renderBoard();renderChips();persist()});
+function openSheet(id){$(id).classList.add('on')}
+document.querySelectorAll('.sheet').forEach(s=>s.addEventListener('click',e=>{if(e.target===s||e.target.closest('[data-close]')){s.classList.remove('on');if(s.id==='editSheet'){renderBoard();renderChips()}}}));
+$('#addBtn').onclick=()=>{let h='';
+ if(DB.lib.length)h+=`<h3>My pedals</h3><div class="addgrid">${DB.lib.map((p,i)=>`<div class="additem" style="--pc:${p.color}" data-lib="${i}"><span class="sw"></span><div style="flex:1"><b>${esc(p.name)}</b><span>${PT[p.type].label}</span></div><button class="btn sm" data-libdel="${i}">✕</button></div>`).join('')}</div>`;
+ CATS.forEach(c=>{const items=Object.entries(PT).filter(([,d])=>d.cat===c);h+=`<h3>${c==='Custom'?'Pedal Lab — build your own':c}</h3><div class="addgrid">${items.map(([k,d])=>`<button class="additem ${c==='Custom'?'big':''}" style="--pc:${d.color}" data-add="${k}"><span class="sw"></span><div><b>${d.label}</b><span>${d.desc}</span></div></button>`).join('')}</div>`});
+ $('#addList').innerHTML=h;openSheet('#addSheet')};
+$('#addList').addEventListener('click',e=>{const del=e.target.closest('[data-libdel]');if(del){DB.lib.splice(+del.dataset.libdel,1);persist();$('#addBtn').onclick();return}
+ const a=e.target.closest('[data-add]'),l=e.target.closest('[data-lib]');let p;
+ if(a)p=mk(a.dataset.add);else if(l){const s=DB.lib[+l.dataset.lib];p=mk(s.type,s.p,s.name,s.color)}else return;
+ buildNode(p);tone.pedals.push(p);rebuildChain();renderBoard();renderChips();persist();$('#addSheet').classList.remove('on');toast(`${p.name} added to your board`);
+ if(p.type==='forge')setTimeout(()=>openEdit(p.id),250)});
+let editId=null;
+function openEdit(id){editId=id;const p=tone.pedals.find(p=>p.id===id);$('#edName').value=p.name;
+ $('#edSw').innerHTML=SWATCH.map(c=>`<button style="background:${c}" data-c="${c}" class="${c===p.color?'on':''}"></button>`).join('');openSheet('#editSheet')}
+$('#edName').addEventListener('input',e=>{const p=tone.pedals.find(p=>p.id===editId);p.name=e.target.value.trim()||PT[p.type].label;persist()});
+$('#edSw').addEventListener('click',e=>{const b=e.target.closest('[data-c]');if(!b)return;const p=tone.pedals.find(p=>p.id===editId);p.color=b.dataset.c;document.querySelectorAll('#edSw button').forEach(x=>x.classList.toggle('on',x===b));persist()});
+$('#edSave').onclick=()=>{const p=tone.pedals.find(p=>p.id===editId);DB.lib.push({type:p.type,name:p.name,color:p.color,p:Object.assign({},p.p)});persist();toast(`★ ${p.name} saved to My Pedals`)};
+$('#ampArea').addEventListener('click',e=>{const b=e.target.closest('[data-amp]');if(!b)return;tone.amp.model=b.dataset.amp;const m=AMPS[b.dataset.amp];if(m.inst!=='any')AMPDEF[m.inst]=b.dataset.amp;amp.set(tone.amp);renderAmp();renderChips();persist()});
+$('#tonesArea').addEventListener('click',e=>{const t=e.target;
+ if(t.id==='tSave'){const name=($('#tnIn').value.trim()||'My tone').slice(0,40);tone.name=name;const copy=JSON.parse(JSON.stringify(tone));const ix=DB.tones.findIndex(x=>x.name===name);ix>=0?DB.tones[ix]=copy:DB.tones.unshift(copy);persist();$('#tname').textContent=name;renderTones();toast(`Saved “${name}”`);return}
+ const l=t.closest('[data-load]');if(l){const k=l.dataset.load;loadTone(k[0]==='m'?DB.tones[+k.slice(1)]:PRESETS[+k.slice(1)]);return}
+ const d=t.closest('[data-tdel]');if(d){DB.tones.splice(+d.dataset.tdel,1);persist();renderTones();return}
+ if(t.id==='tCopy'){const code='TF1:'+btoa(unescape(encodeURIComponent(JSON.stringify({name:tone.name,inst:tone.inst,amp:tone.amp,pedals:tone.pedals.map(({type,name,color,on,p})=>({type,name,color,on,p}))}))));
+  $('#tCode').value=code;const ok=()=>toast('Tone code copied');const fail=()=>{$('#tCode').select();toast('Code is in the box — copy it from there')};
+  try{navigator.clipboard.writeText(code).then(ok,fail)}catch(_){fail()}return}
+ if(t.id==='tImp'){try{const raw=$('#tCode').value.trim().replace(/^TF1:/,'');loadTone(JSON.parse(decodeURIComponent(escape(atob(raw)))))}catch(_){toast('That tone code didn\'t work')}}});
+
+/* inputs */
+let liveStream=null,liveNode=null,fileBuf=null,fileNode=null;
+function inMsg(t,w){const m=$('#inMsg');m.textContent=t;m.classList.toggle('warn',!!w)}
+$('#liveBtn').onclick=async()=>{if(liveNode){liveStream.getTracks().forEach(t=>t.stop());liveNode.disconnect();liveNode=null;$('#liveBtn').classList.remove('on');inMsg('Live input off.');return}
+ try{if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw 0;
+  liveStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+  liveNode=ctx.createMediaStreamSource(liveStream);liveNode.connect(srcBus);$('#liveBtn').classList.add('on');inMsg('Live input ON — wear headphones to avoid feedback. Adjust Input on the Amp tab.')}
+ catch(_){inMsg('Live input is blocked here. Open the app from its own web address (e.g. GitHub Pages) in Safari or Chrome to use a guitar interface. Meanwhile, load a recorded clip or use the virtual guitar.',1)}};
+$('#fileBtn').onclick=()=>{if(fileNode){try{fileNode.stop()}catch(_){}fileNode=null;$('#fileBtn').classList.remove('on');$('#fileBtn').textContent='📁 Load audio clip';inMsg('Clip stopped.');return}$('#fileIn').click()};
+$('#fileIn').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{fileBuf=await ctx.decodeAudioData(await f.arrayBuffer());fileNode=ctx.createBufferSource();fileNode.buffer=fileBuf;fileNode.loop=true;fileNode.connect(srcBus);fileNode.start();
+  $('#fileBtn').classList.add('on');$('#fileBtn').textContent='⏹ Stop clip';inMsg(`Looping “${f.name}” through your rig. Dry, unprocessed recordings sound best.`)}catch(_){inMsg('Could not read that audio file.',1)}};
+
+$('#startBtn').onclick=()=>{try{initAudio();ctx.resume&&ctx.resume()}catch(err){$('#start p').textContent='Audio could not start on this device.';return}$('#start').remove()};
+document.addEventListener('visibilitychange',()=>{if(ctx&&!document.hidden&&ctx.state!=='running')ctx.resume()});
+</script>
+</body>
+</html>
